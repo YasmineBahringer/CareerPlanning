@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Blockchain Career Planning DApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.umd.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { padding: 20px; }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .option-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .option-card:hover { border-color: #6c5ce7; transform: translateY(-2px); }
+        .option-card.selected { border-color: #6c5ce7; background: rgba(108, 92, 231, 0.1); }
+        .btn-submit {
+            background: #6c5ce7;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 30px;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-submit:hover { background: #5a4fcf; }
+        .btn-submit:disabled { opacity: 0.5; }
+        .loading { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .spinner { 
+            width: 40px; height: 40px; border: 4px solid #f3f3f3;
+            border-top: 4px solid #6c5ce7; border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+        .network-warning {
+            background: #ff6b35; color: white; padding: 10px; border-radius: 8px;
+            text-align: center; margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="network-warning">
+            🌐 <strong>Real Blockchain DApp</strong> - Connect to Sepolia Testnet for live transactions
+        </div>
+
+        <div class="card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2>🔒 Career Planning DApp</h2>
+                    <p class="text-muted">Submit real blockchain transactions on Sepolia testnet</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div id="walletInfo" class="hidden">
+                        <div class="alert alert-info mb-2">
+                            <strong>Connected:</strong> <span id="walletAddress"></span><br>
+                            <small>Balance: <span id="walletBalance">0.00</span> ETH</small><br>
+                            <small>Network: <span id="networkName">Unknown</span></small>
+                        </div>
+                    </div>
+                    <button id="connectWallet" class="btn btn-primary">Connect Wallet</button>
+                    <button id="disconnectWallet" class="btn btn-outline-secondary ms-2 hidden">Disconnect</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4 class="mb-4">🎯 Career Goals</h4>
+            <div class="option-grid" id="careerGoals">
+                <div class="option-card" data-value="tech-leadership">
+                    <h6>🚀 Tech Leadership</h6>
+                    <p>Lead engineering teams</p>
+                </div>
+                <div class="option-card" data-value="entrepreneurship">
+                    <h6>💼 Entrepreneurship</h6>
+                    <p>Start your own company</p>
+                </div>
+                <div class="option-card" data-value="consulting">
+                    <h6>🎯 Consulting</h6>
+                    <p>Strategic business advice</p>
+                </div>
+                <div class="option-card" data-value="research">
+                    <h6>🔬 Research</h6>
+                    <p>Cutting-edge research</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4 class="mb-4">💡 Skills Level</h4>
+            <div class="option-grid" id="skillsLevel">
+                <div class="option-card" data-value="beginner">
+                    <h6>🌱 Beginner</h6>
+                    <p>Starting career</p>
+                </div>
+                <div class="option-card" data-value="intermediate">
+                    <h6>📈 Intermediate</h6>
+                    <p>2-5 years experience</p>
+                </div>
+                <div class="option-card" data-value="advanced">
+                    <h6>⭐ Advanced</h6>
+                    <p>5-10 years expertise</p>
+                </div>
+                <div class="option-card" data-value="expert">
+                    <h6>🏆 Expert</h6>
+                    <p>10+ years recognized</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4 class="mb-4">🎓 Education Priority</h4>
+            <div class="option-grid" id="educationPriority">
+                <div class="option-card" data-value="formal-education">
+                    <h6>🎓 Formal Education</h6>
+                    <p>Degrees & certifications</p>
+                </div>
+                <div class="option-card" data-value="hands-on-learning">
+                    <h6>🛠️ Hands-on Learning</h6>
+                    <p>Practical projects</p>
+                </div>
+                <div class="option-card" data-value="mentorship">
+                    <h6>👥 Mentorship</h6>
+                    <p>Expert guidance</p>
+                </div>
+                <div class="option-card" data-value="self-directed">
+                    <h6>📚 Self-Directed</h6>
+                    <p>Independent learning</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card text-center">
+            <button id="submitAssessment" class="btn btn-submit btn-lg" disabled>
+                🔒 Submit Real Blockchain Assessment
+            </button>
+            <p class="mt-3 text-muted">
+                <small>Real transaction cost: 0.001 ETH + gas fees (~$2-5)</small>
+            </p>
+        </div>
+
+        <div id="transactionStatus" class="card hidden">
+            <h5>📊 Transaction Status</h5>
+            <p id="statusMessage">Preparing...</p>
+            <div id="transactionHash" class="hidden"></div>
+        </div>
+
+        <div class="card">
+            <h4>📈 Assessment History</h4>
+            <div id="historyList">
+                <div class="alert alert-info">No blockchain assessments submitted yet</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading hidden">
+        <div class="text-center text-white">
+            <div class="spinner mb-3"></div>
+            <p id="loadingMessage">Processing blockchain transaction...</p>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let provider = null;
+        let signer = null;
+        let contract = null;
+        let userAddress = null;
+        
+        // Real contract on Sepolia
+        const CONTRACT_ADDRESS = '0xFE1B3a2AdeD90C41293dcBdF708601feaF941FB8';
+        const CONTRACT_ABI = [
+            "function submitCareerAssessment(bool _careerGoal, bool _skillLevel, bool _educationPriority, uint256 _nonce) external payable",
+            "function getCareerGuidance(uint256 _assessmentId) external view returns (uint8)",
+            "function getUserAssessmentCount(address _user) external view returns (uint256)",
+            "function getAssessmentCount() external view returns (uint256)",
+            "event AssessmentSubmitted(address indexed user, uint256 indexed assessmentId, uint256 timestamp)"
+        ];
+
+        const NETWORKS = {
+            '0xaa36a7': 'Sepolia Testnet',
+            '0x1': 'Ethereum Mainnet',
+            '0xaa36a7': 'Sepolia Testnet'
+        };
+
+        const selections = {
+            careerGoal: null,
+            skillsLevel: null,
+            educationPriority: null
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            checkWalletConnection();
+        });
+
+        function setupEventListeners() {
+            // Wallet buttons
+            document.getElementById('connectWallet').onclick = connectWallet;
+            document.getElementById('disconnectWallet').onclick = disconnectWallet;
+            document.getElementById('submitAssessment').onclick = submitAssessment;
+
+            // Selection handlers
+            ['careerGoals', 'skillsLevel', 'educationPriority'].forEach(id => {
+                document.getElementById(id).onclick = (e) => handleSelection(e, id);
+            });
+
+            // MetaMask event listeners
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', handleAccountsChanged);
+                window.ethereum.on('chainChanged', () => window.location.reload());
+            }
+        }
+
+        function handleSelection(event, sectionId) {
+            const option = event.target.closest('.option-card');
+            if (!option) return;
+
+            // Clear previous selections
+            const parent = option.parentElement;
+            parent.querySelectorAll('.option-card').forEach(el => el.classList.remove('selected'));
+            
+            // Select new option
+            option.classList.add('selected');
+            
+            // Map section ID to selection key
+            const key = sectionId === 'careerGoals' ? 'careerGoal' : sectionId;
+            selections[key] = option.dataset.value;
+            
+            console.log('Selected:', key, selections[key]);
+            updateSubmitButton();
+        }
+
+        function updateSubmitButton() {
+            const btn = document.getElementById('submitAssessment');
+            const allSelected = selections.careerGoal && selections.skillsLevel && selections.educationPriority;
+            const hasWallet = !!userAddress;
+            
+            btn.disabled = !(allSelected && hasWallet);
+        }
+
+        async function connectWallet() {
+            try {
+                showLoading(true, 'Connecting to MetaMask...');
+                
+                if (!window.ethereum) {
+                    alert('Please install MetaMask to use this real blockchain DApp!\\n\\nMetaMask is required for Ethereum transactions.');
+                    return;
+                }
+
+                // Connect to MetaMask
+                provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send('eth_requestAccounts', []);
+                signer = await provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                // Check network
+                const network = await provider.getNetwork();
+                const chainId = '0x' + network.chainId.toString(16);
+                
+                console.log('Connected to network:', chainId, NETWORKS[chainId]);
+                                // Debug network info                console.log("Current chainId:", chainId);                console.log("Expected Sepolia:", "0xaa36a7");                console.log("Chain match:", chainId === "0xaa36a7");
+
+                // Suggest Sepolia if not connected
+                }
+
+                // Initialize contract
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                // Update UI
+                await updateWalletDisplay();
+                updateWalletUI(true);
+                updateSubmitButton();
+
+                // Save connection state
+                localStorage.setItem('walletConnected', 'true');
+                
+                console.log('Wallet connected successfully:', userAddress);
+
+            } catch (error) {
+                console.error('Failed to connect wallet:', error);
+                
+                let errorMsg = 'Failed to connect wallet: ';
+                if (error.code === 4001) {
+                    errorMsg += 'User rejected the connection request';
+                } else if (error.code === -32002) {
+                    errorMsg += 'Connection request is already pending';
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                alert(errorMsg);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function switchToSepoliaNetwork() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0xaa36a7' }],
+                });
+                
+                // Reconnect after network switch
+                setTimeout(() => {
+                    connectWallet();
+                }, 1000);
+                
+            } catch (switchError) {
+                console.error('Failed to switch network:', switchError);
+                
+                // If network not added, add it
+                if (switchError.code === 4902) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0xaa36a7',
+                                chainName: 'Sepolia Test Network',
+                                nativeCurrency: {
+                                    name: 'ETH',
+                                    symbol: 'ETH',
+                                    decimals: 18
+                                },
+                                rpcUrls: ['https://sepolia.infura.io/v3/'],
+                                blockExplorerUrls: ['https://sepolia.etherscan.io/']
+                            }]
+                        });
+                    } catch (addError) {
+                        console.error('Failed to add Sepolia network:', addError);
+                        alert('Failed to add Sepolia network. Please add it manually in MetaMask.');
+                    }
+                } else {
+                    alert('Failed to switch to Sepolia network: ' + switchError.message);
+                }
+            }
+        }
+
+        async function updateWalletDisplay() {
+            if (!userAddress || !provider) return;
+
+            try {
+                // Get balance
+                const balance = await provider.getBalance(userAddress);
+                const balanceInEth = ethers.formatEther(balance);
+                
+                // Get network info
+                const network = await provider.getNetwork();
+                const chainId = '0x' + network.chainId.toString(16);
+
+                // Update display
+                document.getElementById('walletAddress').textContent = 
+                    userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+                document.getElementById('walletBalance').textContent = 
+                    parseFloat(balanceInEth).toFixed(4);
+                document.getElementById('networkName').textContent = 
+                    NETWORKS[chainId] || `Chain ${network.chainId}`;
+
+            } catch (error) {
+                console.error('Failed to update wallet display:', error);
+            }
+        }
+
+        function updateWalletUI(connected) {
+            document.getElementById('connectWallet').classList.toggle('hidden', connected);
+            document.getElementById('disconnectWallet').classList.toggle('hidden', !connected);
+            document.getElementById('walletInfo').classList.toggle('hidden', !connected);
+        }
+
+        function disconnectWallet() {
+            provider = null;
+            signer = null;
+            contract = null;
+            userAddress = null;
+            
+            updateWalletUI(false);
+            updateSubmitButton();
+            localStorage.removeItem('walletConnected');
+            
+            console.log('Wallet disconnected');
+        }
+
+        function checkWalletConnection() {
+            if (localStorage.getItem('walletConnected') === 'true') {
+                connectWallet();
+            }
+        }
+
+        async function submitAssessment() {
+            try {
+                // Validate inputs
+                if (!contract) {
+                    alert('Please connect your wallet first!');
+                    return;
+                }
+
+                if (!selections.careerGoal || !selections.skillsLevel || !selections.educationPriority) {
+                    alert('Please make selections in all categories!');
+                    return;
+                }
+
+                // Check network
+                const network = await provider.getNetwork();
+                const chainId = '0x' + network.chainId.toString(16);
+                
+
+                showLoading(true, 'Preparing blockchain transaction...');
+                showTransactionStatus('Encoding assessment data...');
+
+                // Convert selections to boolean values
+                const goalValue = getSelectionValue(selections.careerGoal);
+                const skillValue = getSelectionValue(selections.skillsLevel);
+                const educationValue = getSelectionValue(selections.educationPriority);
+                
+                // Generate random nonce for privacy
+                const nonce = Math.floor(Math.random() * 1000000);
+
+                console.log('Submitting assessment to blockchain:', {
+                    goalValue, skillValue, educationValue, nonce,
+                    contract: CONTRACT_ADDRESS,
+                    network: NETWORKS[chainId]
+                });
+
+                // Estimate gas
+                showTransactionStatus('Estimating transaction cost...');
+                try {
+                    const gasEstimate = await contract.submitCareerAssessment.estimateGas(
+                        goalValue, skillValue, educationValue, nonce,
+                        { value: ethers.parseEther('0.001') }
+                    );
+                    console.log('Gas estimate:', gasEstimate.toString());
+                } catch (gasError) {
+                    console.warn('Gas estimation failed:', gasError);
+                }
+
+                // Submit transaction
+                showTransactionStatus('Waiting for MetaMask confirmation...');
+                const tx = await contract.submitCareerAssessment(
+                    goalValue,
+                    skillValue, 
+                    educationValue,
+                    nonce,
+                    { value: ethers.parseEther('0.001') }
+                );
+
+                console.log('Transaction submitted:', tx.hash);
+                showTransactionStatus('Transaction sent to blockchain network...');
+                showTransactionHash(tx.hash);
+
+                // Wait for confirmation
+                showLoading(true, 'Waiting for blockchain confirmation...');
+                showTransactionStatus('Mining transaction on blockchain...');
+                
+                const receipt = await tx.wait();
+                console.log('Transaction confirmed in block:', receipt.blockNumber);
+
+                // Add to history
+                addToHistory({
+                    id: Date.now(),
+                    goal: selections.careerGoal,
+                    skill: selections.skillsLevel,
+                    education: selections.educationPriority,
+                    timestamp: new Date(),
+                    txHash: receipt.hash,
+                    blockNumber: receipt.blockNumber,
+                    gasUsed: receipt.gasUsed.toString(),
+                    network: NETWORKS[chainId] || 'Unknown'
+                });
+
+                // Reset form
+                resetSelections();
+                
+                showTransactionStatus('✅ Assessment successfully recorded on blockchain!');
+                
+                // Auto-hide status after 10 seconds
+                setTimeout(() => {
+                    hideTransactionStatus();
+                }, 10000);
+
+            } catch (error) {
+                console.error('Transaction failed:', error);
+                
+                let errorMessage = 'Transaction failed: ';
+                if (error.code === 4001) {
+                    errorMessage += 'User rejected the transaction in MetaMask';
+                } else if (error.code === -32603) {
+                    errorMessage += 'Insufficient funds for transaction + gas fees';
+                } else if (error.message.includes('insufficient funds')) {
+                    errorMessage += 'Insufficient ETH for transaction + gas fees';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                alert(errorMessage);
+                showTransactionStatus('❌ ' + errorMessage);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function getSelectionValue(selection) {
+            // Convert string selections to boolean values for blockchain storage
+            const valueMap = {
+                // Career goals
+                'tech-leadership': true,
+                'entrepreneurship': false,
+                'consulting': true,
+                'research': false,
+                
+                // Skills level  
+                'beginner': false,
+                'intermediate': true,
+                'advanced': true,
+                'expert': false,
+                
+                // Education priority
+                'formal-education': true,
+                'hands-on-learning': false,
+                'mentorship': true,
+                'self-directed': false
+            };
+            
+            return valueMap[selection] || false;
+        }
+
+        function resetSelections() {
+            // Clear all UI selections
+            document.querySelectorAll('.option-card.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Clear selection state
+            selections.careerGoal = null;
+            selections.skillsLevel = null;
+            selections.educationPriority = null;
+            
+            updateSubmitButton();
+        }
+
+        function addToHistory(assessment) {
+            const historyList = document.getElementById('historyList');
+            
+            // Remove "no assessments" message
+            if (historyList.children[0].textContent.includes('No blockchain')) {
+                historyList.innerHTML = '';
+            }
+
+            const historyItem = document.createElement('div');
+            historyItem.className = 'alert alert-success mb-3';
+            historyItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6>🎯 Real Blockchain Assessment #${assessment.id}</h6>
+                        <p class="mb-2">
+                            <strong>Career Goal:</strong> ${formatDisplay(assessment.goal)}<br>
+                            <strong>Skill Level:</strong> ${formatDisplay(assessment.skill)}<br>
+                            <strong>Education Priority:</strong> ${formatDisplay(assessment.education)}
+                        </p>
+                        <small class="text-muted">
+                            ⏰ ${assessment.timestamp.toLocaleDateString()} ${assessment.timestamp.toLocaleTimeString()}<br>
+                            🌐 Network: ${assessment.network}<br>
+                            📦 Block: ${assessment.blockNumber}<br>
+                            ⛽ Gas Used: ${parseInt(assessment.gasUsed).toLocaleString()}<br>
+                            🔗 <a href="https://sepolia.etherscan.io/tx/${assessment.txHash}" target="_blank" class="text-decoration-none">
+                                View on Etherscan ↗
+                            </a>
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success">✅ Confirmed</span>
+                    </div>
+                </div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+        }
+
+        function formatDisplay(value) {
+            return value.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+
+        function showLoading(show, message = 'Processing...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const messageEl = document.getElementById('loadingMessage');
+            
+            if (show) {
+                messageEl.textContent = message;
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function showTransactionStatus(message) {
+            document.getElementById('statusMessage').textContent = message;
+            document.getElementById('transactionStatus').classList.remove('hidden');
+        }
+
+        function hideTransactionStatus() {
+            document.getElementById('transactionStatus').classList.add('hidden');
+        }
+
+        function showTransactionHash(hash) {
+            const hashDiv = document.getElementById('transactionHash');
+            hashDiv.innerHTML = `
+                <hr>
+                <strong>Transaction Hash:</strong><br>
+                <code style="font-size: 12px; word-break: break-all;">${hash}</code><br>
+                <a href="https://sepolia.etherscan.io/tx/${hash}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                    🔍 View on Etherscan
+                </a>
+            `;
+            hashDiv.classList.remove('hidden');
+        }
+
+        function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                // User disconnected wallet
+                disconnectWallet();
+            } else if (accounts[0] !== userAddress) {
+                // User switched accounts
+                console.log('Account changed, reloading...');
+                window.location.reload();
+            }
+        }
+
+        // Save wallet connection preference
+        window.addEventListener('beforeunload', () => {
+            if (userAddress) {
+                localStorage.setItem('walletConnected', 'true');
+            } else {
+                localStorage.removeItem('walletConnected');
+            }
+        });
+    </script>
+</body>
+</html>

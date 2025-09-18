@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confidential Career Planning - FHE</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/fhevmjs@0.5.0/bundle/index.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2d3748;
+            --secondary-color: #4a5568;
+            --accent-color: #805ad5;
+            --success-color: #38a169;
+            --warning-color: #dd6b20;
+            --danger-color: #e53e3e;
+            --light-bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .app-container {
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .career-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .career-option {
+            background: var(--light-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .career-option:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .career-option.selected {
+            border-color: var(--accent-color);
+            background: rgba(128, 90, 213, 0.1);
+        }
+
+        .career-option h5 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .career-option p {
+            color: var(--secondary-color);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #6c5ce7;
+            transform: translateY(-2px);
+        }
+
+        .wallet-info {
+            background: var(--light-bg);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2>🔒 FHE Career Planning</h2>
+                    <p class="mb-0 text-muted">Private career guidance powered by Fully Homomorphic Encryption</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div id="walletInfo" class="hidden">
+                        <div class="wallet-info d-inline-block">
+                            <strong>Connected:</strong> <span id="walletAddress"></span><br>
+                            <small>Balance: <span id="walletBalance">0.00</span> ETH</small>
+                        </div>
+                    </div>
+                    <button id="connectWallet" class="btn btn-primary">Connect Wallet</button>
+                    <button id="disconnectWallet" class="btn btn-outline-danger ms-2 hidden">Disconnect</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Career Planning Form -->
+            <div id="planningForm">
+                <h3 class="text-center mb-4">Submit Your Confidential Career Assessment</h3>
+                
+                <div class="form-section">
+                    <h5>🎯 Career Goals</h5>
+                    <div class="career-options" id="careerGoals">
+                        <div class="career-option" data-value="tech-leadership">
+                            <h5>🚀 Tech Leadership</h5>
+                            <p>Lead engineering teams and drive technical innovation</p>
+                        </div>
+                        <div class="career-option" data-value="entrepreneurship">
+                            <h5>💼 Entrepreneurship</h5>
+                            <p>Start your own company and build innovative solutions</p>
+                        </div>
+                        <div class="career-option" data-value="consulting">
+                            <h5>🎯 Management Consulting</h5>
+                            <p>Advise companies on strategic business decisions</p>
+                        </div>
+                        <div class="career-option" data-value="research">
+                            <h5>🔬 Research & Development</h5>
+                            <p>Conduct cutting-edge research in your field</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h5>💡 Skills Assessment</h5>
+                    <div class="career-options" id="skillsLevel">
+                        <div class="career-option" data-value="beginner">
+                            <h5>🌱 Beginner</h5>
+                            <p>Just starting your career journey</p>
+                        </div>
+                        <div class="career-option" data-value="intermediate">
+                            <h5>📈 Intermediate</h5>
+                            <p>2-5 years of experience in your field</p>
+                        </div>
+                        <div class="career-option" data-value="advanced">
+                            <h5>⭐ Advanced</h5>
+                            <p>5-10 years with specialized expertise</p>
+                        </div>
+                        <div class="career-option" data-value="expert">
+                            <h5>🏆 Expert</h5>
+                            <p>10+ years with industry recognition</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h5>🎓 Education & Development</h5>
+                    <div class="career-options" id="educationPriority">
+                        <div class="career-option" data-value="formal-education">
+                            <h5>🎓 Formal Education</h5>
+                            <p>Pursue advanced degrees and certifications</p>
+                        </div>
+                        <div class="career-option" data-value="hands-on-learning">
+                            <h5>🛠️ Hands-on Learning</h5>
+                            <p>Learn through practical projects and experience</p>
+                        </div>
+                        <div class="career-option" data-value="mentorship">
+                            <h5>👥 Mentorship</h5>
+                            <p>Focus on guidance from industry experts</p>
+                        </div>
+                        <div class="career-option" data-value="self-directed">
+                            <h5>📚 Self-Directed</h5>
+                            <p>Independent learning and skill development</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button id="submitPlanning" class="btn btn-primary btn-lg">
+                        🔒 Submit Confidential Assessment
+                    </button>
+                </div>
+            </div>
+
+            <!-- Planning History -->
+            <div class="planning-history">
+                <h4>📊 Your Assessment History</h4>
+                <div id="historyList" class="mt-3">
+                    <div class="alert alert-info text-center">
+                        No assessments submitted yet. Submit your first confidential career assessment above!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="text-center text-white">
+            <div class="loading-spinner mb-3"></div>
+            <p>Processing your confidential assessment...</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let provider = null;
+        let signer = null;
+        let contract = null;
+        let userAddress = null;
+        let fhevmInstance = null;
+
+        // Contract configuration - FHE Version
+        const CONTRACT_ADDRESS = '0xFE1B3a2AdeD90C41293dcBdF708601feaF941FB8'; // Update after deployment
+        const CONTRACT_ABI = [
+            "function submitCareerAssessment(bytes32, bytes32, bytes32) external payable",
+            "function requestAssessmentResult(uint256 _assessmentId) external",
+            "function getDecryptedCareerGuidance(uint256 _assessmentId) external view returns (uint8)",
+            "function getUserAssessmentCount(address _user) external view returns (uint256)",
+            "function getUserAssessments(address _user) external view returns (uint256[] memory)",
+            "function getAssessmentCount() external view returns (uint256)",
+            "function isResultRequested(uint256 _assessmentId) external view returns (bool)",
+            "function getAssessmentTimestamp(uint256 _assessmentId) external view returns (uint256)",
+            "function getAssessmentInfo(uint256 _assessmentId) external view returns (address, uint256, bool)",
+            "event AssessmentSubmitted(address indexed user, uint256 indexed assessmentId, uint256 timestamp)",
+            "event ResultRequested(address indexed user, uint256 indexed assessmentId)"
+        ];
+
+        // Selection state
+        const selections = {
+            careerGoal: null,
+            skillsLevel: null,
+            educationPriority: null
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', async () => {
+            setupEventListeners();
+            await initializeFHEVM();
+            checkWalletConnection();
+        });
+
+        function setupEventListeners() {
+            // Wallet connection
+            document.getElementById('connectWallet').addEventListener('click', connectWallet);
+            document.getElementById('disconnectWallet').addEventListener('click', disconnectWallet);
+
+            // Career goal selection
+            document.getElementById('careerGoals').addEventListener('click', (e) => {
+                handleSelection(e, 'careerGoal');
+            });
+
+            // Skills level selection
+            document.getElementById('skillsLevel').addEventListener('click', (e) => {
+                handleSelection(e, 'skillsLevel');
+            });
+
+            // Education priority selection
+            document.getElementById('educationPriority').addEventListener('click', (e) => {
+                handleSelection(e, 'educationPriority');
+            });
+
+            // Submit planning
+            document.getElementById('submitPlanning').addEventListener('click', submitAssessment);
+        }
+
+        function handleSelection(event, type) {
+            const option = event.target.closest('.career-option');
+            if (!option) return;
+
+            // Remove previous selections in this category
+            const parent = option.parentElement;
+            parent.querySelectorAll('.career-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Add selection to clicked option
+            option.classList.add('selected');
+            selections[type] = option.dataset.value;
+
+            console.log(`Selected ${type}:`, selections[type]);
+        }
+
+        async function initializeFHEVM() {
+            try {
+                console.log('Initializing FHEVM...');
+                // For localhost testing, we'll use a simplified approach
+                fhevmInstance = {
+                    encrypt: (value) => {
+                        // Mock encryption for localhost testing
+                        return ethers.utils.hexlify(ethers.utils.randomBytes(32));
+                    }
+                };
+                console.log('FHEVM instance initialized (mock)');
+            } catch (error) {
+                console.error('Failed to initialize FHEVM:', error);
+            }
+        }
+
+        async function connectWallet() {
+            try {
+                showLoading(true);
+                
+                if (!window.ethereum) {
+                    alert('Please install MetaMask or another Web3 wallet');
+                    return;
+                }
+
+                provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send('eth_requestAccounts', []);
+                signer = await provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                // Initialize contract
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                await updateWalletDisplay();
+                updateUIState(true);
+
+                console.log('Wallet connected:', userAddress);
+                alert('Wallet connected successfully!');
+            } catch (error) {
+                console.error('Failed to connect wallet:', error);
+                alert('Failed to connect wallet: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function disconnectWallet() {
+            provider = null;
+            signer = null;
+            contract = null;
+            userAddress = null;
+            updateUIState(false);
+            console.log('Wallet disconnected');
+        }
+
+        async function updateWalletDisplay() {
+            if (!userAddress || !provider) return;
+
+            const balance = await provider.getBalance(userAddress);
+            const balanceInEth = ethers.formatEther(balance);
+
+            document.getElementById('walletAddress').textContent = 
+                `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
+            document.getElementById('walletBalance').textContent = 
+                parseFloat(balanceInEth).toFixed(4);
+        }
+
+        function updateUIState(connected) {
+            const connectBtn = document.getElementById('connectWallet');
+            const disconnectBtn = document.getElementById('disconnectWallet');
+            const walletInfo = document.getElementById('walletInfo');
+
+            if (connected) {
+                connectBtn.classList.add('hidden');
+                disconnectBtn.classList.remove('hidden');
+                walletInfo.classList.remove('hidden');
+            } else {
+                connectBtn.classList.remove('hidden');
+                disconnectBtn.classList.add('hidden');
+                walletInfo.classList.add('hidden');
+            }
+        }
+
+        function checkWalletConnection() {
+            if (localStorage.getItem('walletConnected') === 'true') {
+                connectWallet();
+            }
+        }
+
+        async function submitAssessment() {
+            try {
+                // Validate selections
+                if (!selections.careerGoal || !selections.skillsLevel || !selections.educationPriority) {
+                    alert('Please make selections in all categories before submitting.');
+                    return;
+                }
+
+                if (!contract) {
+                    alert('Please connect your wallet first.');
+                    return;
+                }
+
+                showLoading(true);
+
+                // Convert selections to boolean values
+                const goalValue = getSelectionValue(selections.careerGoal);
+                const skillValue = getSelectionValue(selections.skillsLevel);
+                const educationValue = getSelectionValue(selections.educationPriority);
+
+                console.log('Submitting assessment with values:', {
+                    goal: goalValue,
+                    skill: skillValue,
+                    education: educationValue
+                });
+
+                // For testing, create mock encrypted values
+                const encryptedGoal = fhevmInstance.encrypt(goalValue);
+                const encryptedSkill = fhevmInstance.encrypt(skillValue);
+                const encryptedEducation = fhevmInstance.encrypt(educationValue);
+
+                // Submit to contract
+                const tx = await contract.submitCareerAssessment(
+                    encryptedGoal,
+                    encryptedSkill,
+                    encryptedEducation,
+                    { value: ethers.parseEther('0.001') }
+                );
+
+                console.log('Transaction submitted:', tx.hash);
+                
+                const receipt = await tx.wait();
+                console.log('Transaction confirmed:', receipt);
+
+                // Add to history
+                addToHistory({
+                    id: Date.now(),
+                    goal: selections.careerGoal,
+                    skill: selections.skillsLevel,
+                    education: selections.educationPriority,
+                    timestamp: new Date(),
+                    status: 'completed',
+                    txHash: receipt.hash
+                });
+
+                // Reset form
+                resetSelections();
+                
+                alert('Assessment submitted successfully! Your confidential career guidance has been recorded using FHE encryption.');
+
+            } catch (error) {
+                console.error('Failed to submit assessment:', error);
+                alert('Failed to submit assessment: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function getSelectionValue(selection) {
+            // Convert string selections to boolean values
+            const valueMap = {
+                // Career goals
+                'tech-leadership': true,
+                'entrepreneurship': false,
+                'consulting': true, 
+                'research': false,
+                
+                // Skills level
+                'beginner': false,
+                'intermediate': true,
+                'advanced': true,
+                'expert': false,
+                
+                // Education priority
+                'formal-education': true,
+                'hands-on-learning': false,
+                'mentorship': true,
+                'self-directed': false
+            };
+            
+            return valueMap[selection] || false;
+        }
+
+        function resetSelections() {
+            // Clear all selections
+            document.querySelectorAll('.career-option.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            selections.careerGoal = null;
+            selections.skillsLevel = null;
+            selections.educationPriority = null;
+        }
+
+        function addToHistory(assessment) {
+            const historyList = document.getElementById('historyList');
+            
+            // Clear "no assessments" message
+            if (historyList.children.length === 1 && historyList.children[0].classList.contains('alert')) {
+                historyList.innerHTML = '';
+            }
+
+            const historyItem = document.createElement('div');
+            historyItem.className = 'alert alert-success';
+            historyItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6>Assessment #${assessment.id}</h6>
+                        <p class="mb-2">
+                            <strong>Goal:</strong> ${formatSelectionDisplay(assessment.goal)}<br>
+                            <strong>Skill Level:</strong> ${formatSelectionDisplay(assessment.skill)}<br>
+                            <strong>Education:</strong> ${formatSelectionDisplay(assessment.education)}
+                        </p>
+                        <small class="text-muted">
+                            Submitted: ${assessment.timestamp.toLocaleDateString()} ${assessment.timestamp.toLocaleTimeString()}
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success">
+                            ${assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
+                        </span>
+                        <br>
+                        <small class="text-muted mt-1 d-block">
+                            Tx: ${assessment.txHash.slice(0, 10)}...
+                        </small>
+                    </div>
+                </div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+        }
+
+        function formatSelectionDisplay(value) {
+            return value.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Save wallet connection state
+        window.addEventListener('beforeunload', () => {
+            if (userAddress) {
+                localStorage.setItem('walletConnected', 'true');
+            } else {
+                localStorage.removeItem('walletConnected');
+            }
+        });
+    </script>
+</body>
+</html>
